@@ -19,6 +19,8 @@
 #   Veja o arquivo Patch.rtf, armazenado na mesma pasta deste fonte.
 # ***********************************************************************************
 
+from math import floor
+from random import random
 from time import sleep
 from OpenGL.GL import *
 from OpenGL.GLUT import *
@@ -28,9 +30,18 @@ from Instancia import *
 
 # ***********************************************************************************
 
+# Vida do jogador
+vidas = 3
+
+##TODO: jogador perde vida qndo é acertado:
+##- um inimigo
+##- um projetil
+
+
 # Modelos de Objetos
-MeiaSeta = Polygon()
-Mastro = Polygon()
+personagem = Modelos()
+
+modelos = ["MeiaSeta.txt", "Mastro.txt"]
 
 # ***********************************************************************************
 # Pontos de controle de uma curva Bezier
@@ -39,6 +50,9 @@ Curva1 = []
 # Limites da Janela de Seleção
 Min = Ponto()
 Max = Ponto()
+
+# Quantidade de inimigos no universo
+qtdInimigos = 2
 
 # lista de instancias do universo
 Universo = [] 
@@ -95,17 +109,49 @@ def reshape(w,h):
     glMatrixMode (GL_MODELVIEW)
     glLoadIdentity()
 
-# ***********************************************************************************
-def DesenhaMastro():
-    Mastro.desenhaPoligono()
+def DesenhaPixel():
+    glBegin(GL_QUADS);
+    glVertex2f(-1, -1);
+    glVertex2f(-1, 0);
+    glVertex2f(0, 0);
+    glVertex2f(0, -1);
+    glEnd();
+    
+def DesenhaPersonagem():
+    
+    # print(matrix)
+    # for line in range(lines):
+        # for column in range(columns):
+            # color = colors[int(matrix[line][column]) - 1]
+            # glColor3f(int(color[0]), int(color[1]), int(color[2]));
+            # posX = columnsOffset - column
+            # posY = linesOffset - line
+            # print(posX, posY)
+            # glPushMatrix();
+            # glTranslatef(posX, posY, 0);
+            # DesenhaPixel();
+            # glPopMatrix();
+    # infile.close()
+    
+    #print ("Após leitura do arquivo:")
+    #Min.imprime()
+    #Max.imprime()
+    return 0#self.getLimits()
+    glPushMatrix();
 
-# ***********************************************************************************
-def DesenhaSeta():
-    glPushMatrix()
-    MeiaSeta.desenhaPoligono()
-    glScaled(1,-1, 1)
-    MeiaSeta.desenhaPoligono()
-    glPopMatrix()
+    glTranslatef(2, 0, 0);
+    glColor3f(1, 0, 0);
+    DesenhaRetangulo();
+
+    glTranslatef(0, 2, 0);
+    glColor3f(0, 0, 1);
+    DesenhaRetangulo();
+
+    glTranslatef(-2, 0, 0);
+    glColor3f(1, 1, 0);
+    DesenhaRetangulo();
+    glPopMatrix();
+    pass
 
 
 # **************************************************************
@@ -136,7 +182,7 @@ def AtualizaUniverso():
     if Universo[0].t>1.0:
         Universo[0].t = 0.0
     else:
-        DeltaT = 1.0/50
+        DeltaT = 1.0/5000
         Universo[0].t += DeltaT
     P = CalculaBezier3(Curva1, Universo[0].t)
     Universo[0].posicao = P
@@ -144,7 +190,7 @@ def AtualizaUniverso():
 # ***********************************************************************************
 def display():
     
-    sleep(0.05)
+    #sleep(0.05)
 
 	# Limpa a tela coma cor de fundo
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -156,8 +202,8 @@ def display():
     glColor3f(1,1,1) # R, G, B  [0..1]
     DesenhaEixos()
     glColor3f(1,1,0)
-    AtualizaUniverso()
-    DesenhaUniverso()
+    #AtualizaUniverso()
+    DesenhaPersonagem()
     glColor3f(1,0,0)
     TracaBezier3Pontos()
 
@@ -184,12 +230,15 @@ def keyboard(*args):
 # **********************************************************************
 def arrow_keys(a_keys: int, x: int, y: int):
     if a_keys == GLUT_KEY_UP:         # Se pressionar UP
+        #TODO: andar para frente
         pass
     if a_keys == GLUT_KEY_DOWN:       # Se pressionar DOWN
         pass
     if a_keys == GLUT_KEY_LEFT:       # Se pressionar LEFT
+        #TODO: rotacionar para a esquerda
         pass
     if a_keys == GLUT_KEY_RIGHT:      # Se pressionar RIGHT
+        #TODO: rotacionar para a direita
         pass
 
     glutPostRedisplay()
@@ -228,22 +277,25 @@ def CarregaModelos():
     global MeiaSeta, Mastro
     MeiaSeta.LePontosDeArquivo("MeiaSeta.txt")
     Mastro.LePontosDeArquivo("Mastro.txt")
+    
+
+def CarregaModelo(pos):
+    #TODO: Carrega modelo individualmente
+    return Modelos().LePontosDeArquivo(modelos[pos])
 
 # ***********************************************************************************
 # Esta função deve instanciar todos os personagens do cenário
 # ***********************************************************************************
 def CriaInstancias():
     global Universo
-
-    Universo.append(Instancia())
-    Universo[0].modelo = DesenhaMastro
-    Universo[0].rotacao = 45
-     
-    Universo.append(Instancia())
-    Universo[1].modelo = DesenhaSeta
-
-    # Criar aqui as demais instancias
+    #personagem
     
+    instacia = Instancia(matrix)
+    #TODO: Fazer o instanciamento generico, loop com a quantidade total de modelos no universo, gerando os modelos com uma aleatoriedade
+    # for i in range(qtdInimigos):
+    #     Universo.append(Instancia())
+    #     Universo[i].modelo = CarregaModelo(random() * len(modelos))
+
 # ***********************************************************************************
 def CriaCurvas():
     global Curva1
@@ -254,13 +306,12 @@ def CriaCurvas():
 # ***********************************************************************************
 def init():
     global Min, Max
-    # Define a cor do fundo da tela (AZUL)
-    glClearColor(0, 0, 1, 1)
-
-    CarregaModelos()
-    CriaInstancias()
+    # Define a cor do fundo da tela (PRETA)
+    glClearColor(29/255, 41/255, 81/255, 1)
+    DesenhaPersonagem()
+    #CarregaModelos()
     CriaCurvas()
-    d:float = 7
+    d:int = 20
     Min = Ponto(-d,-d)
     Max = Ponto(d,d)
 

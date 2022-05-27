@@ -11,42 +11,42 @@ from Ponto import *
 import copy
 
 
-class Polygon:
+class Modelos:
 
     def __init__(self):
-        self.Vertices = [] # atributo do objeto
+        self.Pixels = [] # atributo do objeto
 
-    def getNVertices(self):
-        return len(self.Vertices)
+    def getNPixels(self):
+        return len(self.Pixels)
     
-    def insereVertice(self, x, y, z):
-        self.Vertices += [Ponto(x,y,z)]
+    def inserePixel(self, x, y, z):
+        self.Pixels += [Ponto(x,y,z)]
 
     def getVertice(self, i):
-        return self.Vertices[i]
+        return self.Pixels[i]
     
     def desenhaPoligono(self):
         #print ("Desenha Poligono - Tamanho:", len(self.Vertices))
         glBegin(GL_LINE_LOOP)
-        for V in self.Vertices:
+        for V in self.Pixels:
             glVertex3f(V.x,V.y,V.z)
         glEnd();
 
     def desenhaVertices(self):
         glBegin(GL_POINTS);
-        for V in self.Vertices:
+        for V in self.Pixels:
             glVertex3f(V.x,V.y,V.z)
         glEnd();
 
     def imprimeVertices(self):
-        for x in self.Vertices:
+        for x in self.Pixels:
             x.imprime()
 
     def getLimits(self):
-        Min = copy.deepcopy(self.Vertices[0])
-        Max = copy.deepcopy(self.Vertices[0])
+        Min = copy.deepcopy(self.Pixels[0])
+        Max = copy.deepcopy(self.Pixels[0])
         
-        for V in self.Vertices:
+        for V in self.Pixels:
             if V.x > Max.x:
                 Max.x = V.x
             if V.y > Max.y:
@@ -89,14 +89,14 @@ class Polygon:
         return self.getLimits()
 
     def getAresta(self, n):
-        P1 = self.Vertices[n]
-        n1 = (n+1) % self.getNVertices()
-        P2 = self.Vertices[n1]
+        P1 = self.Pixels[n]
+        n1 = (n+1) % self.getNPixels()
+        P2 = self.Pixels[n1]
         return P1, P2
 
     def desenhaAresta(self, n):
         glBegin(GL_LINES)
-        glVertex3f(self.Vertices[n].x,self.Vertices[n].y,self.Vertices[n].z)
-        n1 = (n+1) % self.getNVertices()
-        glVertex3f(self.Vertices[n1].x,self.Vertices[n1].y,self.Vertices[n1].z)
+        glVertex3f(self.Pixels[n].x,self.Pixels[n].y,self.Pixels[n].z)
+        n1 = (n+1) % self.getNPixels()
+        glVertex3f(self.Pixels[n1].x,self.Pixels[n1].y,self.Pixels[n1].z)
         glEnd()
