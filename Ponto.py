@@ -33,7 +33,12 @@ class Ponto:
             x = self.x + other.x
             y = self.y + other.y
             return Ponto(x, y)
-
+    
+    def __sub__(self, other):
+            x = self.x - other.x
+            y = self.y - other.y
+            return Ponto(x, y)
+        
     def __mul__(self, other: int):
             x = self.x * other
             y = self.y * other
@@ -56,7 +61,7 @@ class Ponto:
 # int, valor do parâmetro no ponto de interseção (sobre a reta MN)       */
 #                                                                        */
 # ********************************************************************** */
-def intersec2d(k: Ponto, l: Ponto, m: Ponto, n: Ponto) -> (int, float, float):
+def intersec2d(k: Ponto, l: Ponto, m: Ponto, n: Ponto):
     det = (n.x - m.x) * (l.y - k.y)  -  (n.y - m.y) * (l.x - k.x)
 
     if (det == 0.0):

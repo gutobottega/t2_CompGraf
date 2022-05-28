@@ -19,13 +19,12 @@
 #   Veja o arquivo Patch.rtf, armazenado na mesma pasta deste fonte.
 # ***********************************************************************************
 
-from math import floor
+from math import floor, cos, radians, sin
 from random import random
 from time import sleep
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-from Poligonos import *
 from Instancia import *
 
 # ***********************************************************************************
@@ -33,15 +32,22 @@ from Instancia import *
 # Vida do jogador
 vidas = 3
 
+#balas
+balas = 10
+
 ##TODO: jogador perde vida qndo é acertado:
 ##- um inimigo
 ##- um projetil
 
 
-# Modelos de Objetos
-personagem = Modelos()
 
-modelos = ["MeiaSeta.txt", "Mastro.txt"]
+modelos: list[str] = [
+    "personagens/p1.txt",
+    "personagens/p2.txt",
+    "personagens/p3.txt",
+    "personagens/p4.txt",
+    "personagens/p5.txt",
+    ]
 
 # ***********************************************************************************
 # Pontos de controle de uma curva Bezier
@@ -52,22 +58,15 @@ Min = Ponto()
 Max = Ponto()
 
 # Quantidade de inimigos no universo
-qtdInimigos = 2
+qtdInimigos = 5
+
+personagem = Instancia('personagens/personagem.txt')
 
 # lista de instancias do universo
-Universo = [] 
+inimigos:list[Instancia] = [] 
 
-def DesenhaLinha (P1, P2):
-    glBegin(GL_LINES)
-    glVertex3f(P1.x,P1.y,P1.z)
-    glVertex3f(P2.x,P2.y,P2.z)
-    glEnd()
-
-# ****************************************************************
-def RotacionaAoRedorDeUmPonto(alfa: float, P: Ponto):
-    glTranslatef(P.x, P.y, P.z)
-    glRotatef(alfa, 0,0,1)
-    glTranslatef(-P.x, -P.y, -P.z)
+# lista de instancias do universo
+tiros:list[Instancia] = [] 
 
 # **************************************************************
 def CalculaBezier3(PC, t:float):
@@ -80,7 +79,7 @@ def CalculaBezier3(PC, t:float):
 # ***********************************************************************************
 def TracaBezier3Pontos():
     
-    t=0.0
+    t=1.0
     DeltaT = 1.0/50
     P = Ponto;
     glBegin(GL_LINE_STRIP);
@@ -108,50 +107,25 @@ def reshape(w,h):
     glOrtho(Min.x, Max.x, Min.y, Max.y, 0.0, 1.0)
     glMatrixMode (GL_MODELVIEW)
     glLoadIdentity()
-
-def DesenhaPixel():
-    glBegin(GL_QUADS);
-    glVertex2f(-1, -1);
-    glVertex2f(-1, 0);
-    glVertex2f(0, 0);
-    glVertex2f(0, -1);
-    glEnd();
     
 def DesenhaPersonagem():
+    personagem.Desenha()
+    inimigos[0].position = Ponto(-30, 20, 0)
+    inimigos[1].position = Ponto(-30, -20, 0)
+    inimigos[2].position = Ponto(0, -20, 0)
+    inimigos[3].position = Ponto(30, -20, 0)
+    inimigos[4].position = Ponto(30, 20, 0)
+    [x.Desenha() for x in inimigos]
+ 
+def DesenhaTiros():
+    [x.Desenha() for x in tiros]
     
-    # print(matrix)
-    # for line in range(lines):
-        # for column in range(columns):
-            # color = colors[int(matrix[line][column]) - 1]
-            # glColor3f(int(color[0]), int(color[1]), int(color[2]));
-            # posX = columnsOffset - column
-            # posY = linesOffset - line
-            # print(posX, posY)
-            # glPushMatrix();
-            # glTranslatef(posX, posY, 0);
-            # DesenhaPixel();
-            # glPopMatrix();
-    # infile.close()
+def rotaciona(V:Ponto, angulo:float):
+    angulo = radians(angulo)
+    x = V.x * cos(angulo) - V.y * sin(angulo)
+    y = V.x * sin(angulo) + V.y * cos(angulo)
+    return Ponto(x, y)
     
-    #print ("Após leitura do arquivo:")
-    #Min.imprime()
-    #Max.imprime()
-    return 0#self.getLimits()
-    glPushMatrix();
-
-    glTranslatef(2, 0, 0);
-    glColor3f(1, 0, 0);
-    DesenhaRetangulo();
-
-    glTranslatef(0, 2, 0);
-    glColor3f(0, 0, 1);
-    DesenhaRetangulo();
-
-    glTranslatef(-2, 0, 0);
-    glColor3f(1, 1, 0);
-    DesenhaRetangulo();
-    glPopMatrix();
-    pass
 
 
 # **************************************************************
@@ -172,20 +146,32 @@ def DesenhaEixos():
     glVertex2f(Meio.x,Max.y)
     glEnd()
 
+def isVisible(pos):
+    if(pos.x < Max.x and pos.x > Min.x):
+            if(pos.y < Max.y and pos.y > Min.y):
+                return True
+    return False
 # ***********************************************************************************
-def DesenhaUniverso():
-    for I in Universo:
-        I.Desenha()
-
-# ***********************************************************************************
+def AtualizaTiro():
+    #tiros
+    remove = []
+    for i in range(len(tiros)):
+        newPos = tiros[i].position + rotaciona(tiros[i].movement, tiros[i].rotation) * tiros[i].speed
+        if(not isVisible(newPos)):
+            remove += [i]
+        else: tiros[i].position = newPos
+    [tiros.pop(j) for j in remove]
+    #TODO: translate tiros
+    
 def AtualizaUniverso():
-    if Universo[0].t>1.0:
-        Universo[0].t = 0.0
-    else:
-        DeltaT = 1.0/5000
-        Universo[0].t += DeltaT
-    P = CalculaBezier3(Curva1, Universo[0].t)
-    Universo[0].posicao = P
+    pass
+    # if inimigos[0].t>1.0:
+    #     inimigos[0].t = 0.0
+    # else:
+    #     DeltaT = 1.0/5000
+    #     inimigos[0].t += DeltaT
+    # P = CalculaBezier3(Curva1, inimigos[0].t)
+    #Universo[0].position = P
     
 # ***********************************************************************************
 def display():
@@ -202,26 +188,34 @@ def display():
     glColor3f(1,1,1) # R, G, B  [0..1]
     DesenhaEixos()
     glColor3f(1,1,0)
-    #AtualizaUniverso()
+    AtualizaTiro()
     DesenhaPersonagem()
+    DesenhaTiros()
     glColor3f(1,0,0)
     TracaBezier3Pontos()
 
     glutSwapBuffers()
-
+ 
 # ***********************************************************************************
 # The function called whenever a key is pressed. 
 # Note the use of Python tuples to pass in: (key, x, y)
 #ESCAPE = '\033'
 ESCAPE = b'\x1b'
 def keyboard(*args):
-    print (args)
+    global tiros
     # If escape is pressed, kill everything.
     if args[0] == b'q':
         os._exit(0)
+    if args[0] == b' ':
+        #TODO: gerar uma instancia do tiro, no maximo 10
+        if(len(tiros) + 1 <= balas):
+            inst = Instancia('personagens/tiro.txt')
+            inst.position = personagem.position
+            inst.rotation = personagem.rotation
+            tiros += [inst]
+            inst.Desenha()
     if args[0] == ESCAPE:
         os._exit(0)
-# Forca o redesenho da tela
     glutPostRedisplay()
 
 
@@ -229,16 +223,20 @@ def keyboard(*args):
 #  arrow_keys ( a_keys: int, x: int, y: int )   
 # **********************************************************************
 def arrow_keys(a_keys: int, x: int, y: int):
-    if a_keys == GLUT_KEY_UP:         # Se pressionar UP
-        #TODO: andar para frente
-        pass
-    if a_keys == GLUT_KEY_DOWN:       # Se pressionar DOWN
-        pass
+    global personagem
+    personagem = personagem
+    if a_keys == GLUT_KEY_UP:  
+        newPos = personagem.position + rotaciona(personagem.movement, personagem.rotation)
+        if(isVisible(newPos)):
+            personagem.position = newPos
+        
     if a_keys == GLUT_KEY_LEFT:       # Se pressionar LEFT
         #TODO: rotacionar para a esquerda
-        pass
+        personagem.rotation += 10 
+        
     if a_keys == GLUT_KEY_RIGHT:      # Se pressionar RIGHT
         #TODO: rotacionar para a direita
+        personagem.rotation -= 10
         pass
 
     glutPostRedisplay()
@@ -272,29 +270,16 @@ def mouse(button: int, state: int, x: int, y: int):
 def mouseMove(x: int, y: int):
     #glutPostRedisplay()
     return
-
-def CarregaModelos():
-    global MeiaSeta, Mastro
-    MeiaSeta.LePontosDeArquivo("MeiaSeta.txt")
-    Mastro.LePontosDeArquivo("Mastro.txt")
     
-
-def CarregaModelo(pos):
-    #TODO: Carrega modelo individualmente
-    return Modelos().LePontosDeArquivo(modelos[pos])
 
 # ***********************************************************************************
 # Esta função deve instanciar todos os personagens do cenário
 # ***********************************************************************************
 def CriaInstancias():
-    global Universo
-    #personagem
-    
-    instacia = Instancia(matrix)
-    #TODO: Fazer o instanciamento generico, loop com a quantidade total de modelos no universo, gerando os modelos com uma aleatoriedade
-    # for i in range(qtdInimigos):
-    #     Universo.append(Instancia())
-    #     Universo[i].modelo = CarregaModelo(random() * len(modelos))
+    global inimigos
+    for i in range(qtdInimigos):
+        #TODO:randomizar os inimigos
+        inimigos.append(Instancia(modelos[i]))  
 
 # ***********************************************************************************
 def CriaCurvas():
@@ -308,10 +293,9 @@ def init():
     global Min, Max
     # Define a cor do fundo da tela (PRETA)
     glClearColor(29/255, 41/255, 81/255, 1)
-    DesenhaPersonagem()
-    #CarregaModelos()
+    CriaInstancias()
     CriaCurvas()
-    d:int = 20
+    d:int = 80
     Min = Ponto(-d,-d)
     Max = Ponto(d,d)
 
@@ -331,6 +315,7 @@ glutIdleFunc(display)
 glutReshapeFunc(reshape)
 glutKeyboardFunc(keyboard)
 glutMouseFunc(mouse)
+glutSpecialFunc(arrow_keys);
 init()
 
 try:
