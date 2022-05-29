@@ -6,7 +6,7 @@
 # ************************************************
 
 """ Classe Ponto """
-class Ponto:   
+class Point:   
     def __init__(self, x=0,y=0,z=0):
         self.x = x
         self.y = y
@@ -32,17 +32,17 @@ class Ponto:
     def __add__(self, other):
             x = self.x + other.x
             y = self.y + other.y
-            return Ponto(x, y)
+            return Point(x, y)
     
     def __sub__(self, other):
             x = self.x - other.x
             y = self.y - other.y
-            return Ponto(x, y)
+            return Point(x, y)
         
     def __mul__(self, other: int):
             x = self.x * other
             y = self.y * other
-            return Ponto(x, y)
+            return Point(x, y)
 
 
 
@@ -61,7 +61,7 @@ class Ponto:
 # int, valor do parâmetro no ponto de interseção (sobre a reta MN)       */
 #                                                                        */
 # ********************************************************************** */
-def intersec2d(k: Ponto, l: Ponto, m: Ponto, n: Ponto):
+def intersec2d(k: Point, l: Point, m: Point, n: Point):
     det = (n.x - m.x) * (l.y - k.y)  -  (n.y - m.y) * (l.x - k.x)
 
     if (det == 0.0):
@@ -77,7 +77,7 @@ def intersec2d(k: Ponto, l: Ponto, m: Ponto, n: Ponto):
 # Detecta interseccao entre os pontos
 #
 # **********************************************************************
-def HaInterseccao(k: Ponto, l: Ponto, m: Ponto, n: Ponto) -> bool:
+def HaInterseccao(k: Point, l: Point, m: Point, n: Point) -> bool:
     ret, s, t = intersec2d( k,  l,  m,  n)
 
     if not ret: return False

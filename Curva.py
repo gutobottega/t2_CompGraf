@@ -3,13 +3,13 @@
 # 19102856-2
 # Fundamentos de Computação Gráfica - Turma 010 - 2021/2
 #####################################################
-from Ponto import Ponto
+from Point import Point
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 
 class Curva:
-    def __init__(self, *args:Ponto):
+    def __init__(self, *args:Point):
         self.pos = 0
         self.lst_pt = []
         self.continua = []
@@ -42,7 +42,7 @@ class Curva:
     def desenhaCurva(self):
         t:float = 0
         delta:float = 1/50
-        p = Ponto()
+        p = Point()
 
         
         glBegin(GL_LINE_STRIP)
@@ -59,7 +59,7 @@ class Curva:
 
 
 
-    def computaBezier(self, t:float) -> Ponto:
+    def computaBezier(self, t:float) -> Point:
         um_menos_t = 1-t
         
         if len(self.lst_pt) == 3:
@@ -69,7 +69,7 @@ class Curva:
             
             c1x = (um_menos_t**2 * p0.x) + (2*um_menos_t * t * p1.x) + (t**2 * p2.x)
             c1y = (um_menos_t**2 * p0.y) + (2*um_menos_t * t * p1.y) + (t**2 * p2.y)
-            c1 = Ponto()
+            c1 = Point()
             c1.set(c1x, c1y)
             return c1
 
@@ -81,7 +81,7 @@ class Curva:
 
             c1x = (um_menos_t**3 *p0.x) + ((3*um_menos_t**2)*t*p1.x) + ((3*um_menos_t**2)*t*p2.x) + (t**3 * p3.x)
             c1y = (um_menos_t**3 *p0.y) + ((3*um_menos_t**2)*t*p1.y) + ((3*um_menos_t**2)*t*p2.y) + (t**3 * p3.y)
-            c1 = Ponto()
+            c1 = Point()
             c1.set(c1x, c1y)
             return c1
            

@@ -6,36 +6,47 @@
 # ************************************************
 
 from math import floor
+import time
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-from Ponto import *
+from Point import *
 
 """ Classe Instancia """
-class Instancia:   
+class Instance:   
     def __init__(self, nome):
-        self.position = Ponto (0,0,0) 
-        self.escala = Ponto (1,1,1)
+        self.max = Point()
+        self.min = Point()
+        self.position = Point (0,-20,0) 
+        self.escala = Point (1,1,1)
         self.rotation:float = 0.0
-        self.movement = Ponto(0,1,0)
-        self.speed = 0.5
+        self.movement = Point(0,1,0)
+        self.speed = 2
+        self.counter = time.time()
         self.colors = []
-        self.max = Ponto (0,0,0)
-        self.min = Ponto (0,0,0)
+        self.max = Point (0,0,0)
+        self.min = Point (0,0,0)
         self.columnsOffset = 0
         self.linesOffset = 0
         self.t = 0.0
-        self.modelo = self.criaPersonagem(nome)
+        self.curva = []
+        self.instance = self.createInstance(nome)
     
-    def Desenha(self):
+    def path(self):
+        now = time.time()
+        ret = self.speed * (now - self.counter) * 15
+        self.counter = now
+        return ret
+    
+    def Draw(self):
         glPushMatrix()
         glTranslatef(self.position.x, self.position.y, 0)
         glRotatef(self.rotation, 0, 0, 1)
         glScalef(self.escala.x, self.escala.y, self.escala.z)
-        self.DesenhaPersonagem()
+        self.DrawCharacter()
         glPopMatrix()
         
-    def DesenhaPixel(self):
+    def DrawPixel(self):
         glBegin(GL_QUADS)
         glVertex2f(-1, -1)
         glVertex2f(-1, 0)
@@ -43,7 +54,7 @@ class Instancia:
         glVertex2f(0, -1)
         glEnd()
     
-    def criaPersonagem(self, nome):
+    def createInstance(self, nome):
         #TODO: get max and min valuesss
         Nome = nome
         infile = open(Nome)
@@ -59,15 +70,20 @@ class Instancia:
         infile.close()
         return [x.split() for x in aux]
 
-    def DesenhaPersonagem(self):
-        for line in range(len(self.modelo)):
-            for column in range(len(self.modelo[line])):
-                color = self.colors[int(self.modelo[line][column]) - 1]
+    def DrawCharacter(self):
+        for line in range(len(self.instance)):
+            for column in range(len(self.instance[line])):
+                color = self.colors[int(self.instance[line][column]) - 1]
                 glColor3f(int(color[0])/255, int(color[1])/255, int(color[2])/255)
                 posX = self.columnsOffset - column
                 posY = self.linesOffset - line
                 glPushMatrix()
                 glTranslatef(posX, posY, 0)
-                self.DesenhaPixel()
+                self.DrawPixel()
                 glPopMatrix()
     
+    def CreateCurve(self, mid, end):
+        self.curva = []
+        self.curva += [self.position]
+        self.curva += [mid]
+        self.curva += [end]
