@@ -19,7 +19,8 @@
 #   Veja o arquivo Patch.rtf, armazenado na mesma pasta deste fonte.
 # ***********************************************************************************
 
-from math import floor, cos, radians, sin, sqrt
+from math import degrees, floor, cos, radians, sin, sqrt
+import math
 from random import random
 from time import sleep
 from OpenGL.GL import *
@@ -35,13 +36,18 @@ lifes = 3
 hearts: list[Instance] = []
 dead = Instance('personagens/c0.txt')
 
-#shots
-qtShots = 10
-fireRate = time.time()
+#Enemy quantity
+amtEnemies = 20
 
-##TODO: jogador perde vida qndo é acertado:
-##- um inimigo
-##- um projetil
+#shots
+amtShots = 10
+amtEnemyShots = 5
+characterFireRate = 0.5
+enemyFireRate = 3
+
+
+characterFireRateCounter = time.time()
+enemyFireRateCounter = time.time()
 
 
 
@@ -51,6 +57,9 @@ modelos: list[str] = [
     "personagens/p3.txt",
     "personagens/p4.txt",
     "personagens/p5.txt",
+    "personagens/p6.txt",
+    "personagens/p7.txt",
+    "personagens/p8.txt"
     ]
 
 # ***********************************************************************************
@@ -60,7 +69,6 @@ Min = Point()
 Max = Point()
 
 # Quantidade de inimigos no universo
-qtdInimigos = 10
 
 character = Instance('personagens/personagem.txt')
 
@@ -114,6 +122,7 @@ def reshape(w,h):
 def DrawInstances():
     [x.Draw() for x in enemies]
     [x.Draw() for x in characterShots]
+    [x.Draw() for x in enemyShots]
     character.Draw()
     [x.Draw() for x in hearts]
     
@@ -213,7 +222,7 @@ def isVisible(pos):
                 return True
     return False
 # ***********************************************************************************
-def updateShots():
+def updateCharacterShots():
     remove = []
     for i in range(len(characterShots)):
         newPos = characterShots[i].position + rotaciona(characterShots[i].movement, characterShots[i].rotation) * characterShots[i].speed
@@ -223,8 +232,30 @@ def updateShots():
     remove.sort(reverse=True)
     [characterShots.pop(j) for j in remove]
     
+def updateEnemyShots():
+    remove = []
+    for i in range(len(enemyShots)):
+        newPos = enemyShots[i].position + rotaciona(enemyShots[i].movement, enemyShots[i].rotation) * enemyShots[i].speed
+        if(not isVisible(newPos)):
+            remove += [i]
+        else: enemyShots[i].position = newPos
+    remove.sort(reverse=True)
+    [enemyShots.pop(j) for j in remove]
+    
+
+def dotproduct(v1, v2):
+      return sum((a*b) for a, b in zip(v1, v2))
+
+def length(v):
+  return math.sqrt(dotproduct(v, v))
+
+def angle(v1, v2):
+    v1 = [v1.x,v1.y,v1.z]
+    v2 = [v2.x,v2.y,v2.z]
+    return math.acos(dotproduct(v1, v2) / (length(v1) * length(v2)))
+
 def updateEnemies():
-    global enemies, Max, Min, counter
+    global enemies, Max, Min, counter, enemyFireRateCounter, enemyShots
     for enemy in enemies:
         if enemy.t>1.0:
             DeltaT = enemy.path()/curveLength(enemy.curva)
@@ -239,6 +270,19 @@ def updateEnemies():
         else:
             DeltaT = enemy.path()/curveLength(enemy.curva)
             enemy.t = enemy.t + DeltaT
+            if(random() > 0.2):
+                now = time.time()
+                if(now - enemyFireRateCounter > enemyFireRate):
+                    enemyFireRateCounter = now
+                    if(len(enemyShots) + 1 <= amtEnemyShots):
+                        inst = Instance('personagens/tiro.txt')
+                        inst.position = enemy.position
+                        aux = character.position - inst.position
+                        inst.rotation = degrees(angle(enemy.movement, aux))
+                        if(aux.x > 0): inst.rotation = -inst.rotation
+                        inst.speed = 0.2
+                        enemyShots += [inst]
+                        inst.Draw()
         P = CalculeBezier3(enemy.curva, enemy.t)
         enemy.position = P
         enemy.Draw()
@@ -258,7 +302,8 @@ def display():
     #DesenhaEixos()
     glColor3f(1,1,0)
     updateEnemies()
-    updateShots()
+    updateCharacterShots()
+    updateEnemyShots()
     checkEnemyHitBox()
     checkCharacterHitBox()
     if lifes == 0: 
@@ -267,6 +312,7 @@ def display():
         os._exit(0)
     elif len(enemies) == 0:
         print('You won =D')
+        print("With", lifes, "life left.")
         sleep(1)
         os._exit(0)
     DrawInstances()
@@ -277,20 +323,19 @@ def display():
 # ***********************************************************************************
 ESCAPE = b'\x1b'
 def keyboard(*args):
-    global characterShots, fireRate
+    global characterShots, characterFireRateCounter
     # If escape is pressed, kill everything.
     if args[0] == b'q':
         os._exit(0)
     if args[0] == b' ':
         now = time.time()
-        if(now - fireRate > 0.5):
-            fireRate = now
-            if(len(characterShots) + 1 <= qtShots):
+        if(now - characterFireRateCounter > characterFireRate):
+            characterFireRateCounter = now
+            if(len(characterShots) + 1 <= amtShots):
                 inst = Instance('personagens/tiro.txt')
                 inst.position = character.position
                 inst.rotation = character.rotation
                 characterShots += [inst]
-                inst.Draw()
     if args[0] == ESCAPE:
         os._exit(0)
     glutPostRedisplay()
@@ -303,7 +348,12 @@ def arrow_keys(a_keys: int, x: int, y: int):
         newPos = character.position + rotaciona(character.movement, character.rotation) * character.speed
         if(isVisible(newPos)):
             character.position = newPos
-        
+            
+    if a_keys == GLUT_KEY_DOWN:  
+        newPos = character.position - rotaciona(character.movement, character.rotation) * character.speed
+        if(isVisible(newPos)):
+            character.position = newPos
+
     if a_keys == GLUT_KEY_LEFT:
         character.rotation += 15 
         
@@ -320,9 +370,6 @@ def mouse(button: int, state: int, x: int, y: int):
         return
     if (button != GLUT_RIGHT_BUTTON):
         return
-    #print ("Mouse:", x, ",", y)
-    # Converte a coordenada de tela para o sistema de coordenadas do 
-    # universo definido pela glOrtho
     vport = glGetIntegerv(GL_VIEWPORT)
     mvmatrix = glGetDoublev(GL_MODELVIEW_MATRIX)
     projmatrix = glGetDoublev(GL_PROJECTION_MATRIX)
@@ -340,8 +387,8 @@ def mouseMove(x: int, y: int):
     return
 
 def updateHearts():
-    print(lifes)
-    hearts[lifes].instance = dead.instance
+    if(lifes>2):return
+    hearts[lifes].colors = dead.colors
 
 def createHearts():
     global hearts
@@ -365,7 +412,7 @@ def CreateEnemies():
         Point(50, 0, 0),
         Point(70, -10, 0),
     ]
-    for i in range(qtdInimigos):
+    for i in range(amtEnemies):
         enemy = Instance(modelos[int(random()*len(modelos))])
         enemy.position = aux[int(random()*len(aux))]
         end = Point()

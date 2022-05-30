@@ -34,7 +34,7 @@ class Instance:
     
     def path(self):
         now = time.time()
-        ret = self.speed * (now - self.counter) * 15
+        ret = self.speed * (now - self.counter) * 12
         self.counter = now
         return ret
     
